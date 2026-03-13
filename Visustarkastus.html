@@ -90,6 +90,7 @@
     .header-btn:hover { background: #eee; }
 
     .chart-body {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -122,6 +123,25 @@
       place-items: center;
     }
 
+    .verify-line-wrap {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 5;
+    }
+    .verify-line-bar {
+      height: 2px;
+      background: #000;
+      margin: 0 auto;
+    }
+    .verify-line-label {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -152,7 +172,12 @@
 
   <!-- Chart -->
   <div class="chart-screen" id="chartScreen">
-    <div class="chart-body" id="chartBody"></div>
+    <div class="chart-body" id="chartBody">
+      <div class="verify-line-wrap" id="verifyLineWrap" style="display:none;">
+        <div class="verify-line-bar" id="verifyLineBar"></div>
+        <div class="verify-line-label">← 200 mm tarkastusviiva →</div>
+      </div>
+    </div>
     <div class="chart-sidebar">
       <div class="info" id="infoText"></div>
       <div class="sidebar-buttons">
@@ -226,9 +251,21 @@
     function showError(msg) { calError.textContent = msg; }
 
     function buildChart() {
-      chartBody.innerHTML = '';
+      // Save verify line elements before clearing
+      const verifyWrap = document.getElementById('verifyLineWrap');
+      const verifyBar = document.getElementById('verifyLineBar');
+
+      // Clear only chart rows (keep verify line)
+      const rows = chartBody.querySelectorAll('.chart-row');
+      rows.forEach(r => r.remove());
+
       uidCounter = 0;
       const distanceMm = distanceM * 1000;
+
+      // Set verify line: 200mm wide
+      const lineWidthPx = 200 * pxPerMm;
+      verifyBar.style.width = lineWidthPx + 'px';
+      verifyWrap.style.display = '';
 
       // Build rows from largest (lowest visus) to smallest (highest visus)
       for (const visus of VISUS_VALUES) {
