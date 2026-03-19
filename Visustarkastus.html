@@ -451,26 +451,22 @@
 
     // ─── Landolt C SVG ───
     // Standard Landolt C: outer diameter = 5 units, stroke width = 1 unit, gap = 1 unit
-    // We use a viewBox centred ring drawn as a thick stroked circle with a gap cut via clip-path
+    // viewBox 120×120 with ring centred at 60,60 — 10 unit padding on all sides prevents edge clipping
     function createLandoltSVG(direction, sizePx, uid) {
       const rot = ROTATIONS[direction];
       const clipId = `c${uid}`;
-      // Geometry in a 100×100 viewBox for precision
-      // Ring: centre 50,50  outer radius 50, inner radius 30  → stroke circle r=40, stroke-width=20
-      // Gap: 1/5 of outer diameter = 20 units wide, cut at 3 o'clock (right)
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('width', sizePx);
       svg.setAttribute('height', sizePx);
-      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('viewBox', '0 0 120 120');
       svg.innerHTML = `
         <defs>
           <clipPath id="${clipId}">
-            <!-- Full area minus the gap rectangle (right side, centred vertically) -->
-            <path d="M0,0 H100 V40 H50 V60 H100 V100 H0 Z" />
+            <path d="M0,0 H120 V50 H60 V70 H120 V120 H0 Z" />
           </clipPath>
         </defs>
-        <g transform="rotate(${rot} 50 50)">
-          <circle cx="50" cy="50" r="40" fill="none" stroke="#1A1A1A" stroke-width="20" clip-path="url(#${clipId})"/>
+        <g transform="rotate(${rot} 60 60)">
+          <circle cx="60" cy="60" r="40" fill="none" stroke="#1A1A1A" stroke-width="20" clip-path="url(#${clipId})"/>
         </g>`;
       return svg;
     }
