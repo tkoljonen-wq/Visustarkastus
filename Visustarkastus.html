@@ -340,7 +340,7 @@
   <!-- ═══ Test ═══ -->
   <div class="screen hidden" id="testScreen">
     <div class="optotype-area">
-      <div id="calLine" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);height:1.5px;background:#1A1A1A;"></div>
+      <div id="calLine" style="position:fixed;top:0;left:50%;transform:translateX(-50%);height:1.5px;background:#1A1A1A;z-index:10;"></div>
       <div class="optotype-container" id="optotypeContainer"></div>
     </div>
     <div class="controls-bar">
@@ -597,8 +597,10 @@
       levelLog = [];
       lastDirection = '';
 
-      // Set 200mm calibration line
-      document.getElementById('calLine').style.width = (200 * pxPerMm) + 'px';
+      // Set 200mm calibration line, 1cm from top
+      const calLine = document.getElementById('calLine');
+      calLine.style.width = (200 * pxPerMm) + 'px';
+      calLine.style.top = (10 * pxPerMm) + 'px';
 
       showScreen(testScreen);
       showOptotype();
