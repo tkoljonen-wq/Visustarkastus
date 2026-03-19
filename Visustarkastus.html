@@ -3,213 +3,386 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Landolt C – näöntarkkuustaulu</title>
+  <title>Landolt C – näöntarkkuustesti</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #fff;
-      color: #222;
-      min-height: 100vh;
+
+    :root {
+      --bg: #FAFAF9;
+      --surface: #FFFFFF;
+      --text: #1A1A1A;
+      --text-dim: #8A8A86;
+      --accent: #2D5BFF;
+      --accent-hover: #1A44DD;
+      --correct: #22A867;
+      --wrong: #E03C3C;
+      --border: #E5E5E2;
+      --radius: 14px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     }
 
-    /* --- Calibration screen --- */
-    .calibration-screen {
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 40px 20px;
-      background: #f5f5f5;
+      overflow: hidden;
     }
+
+    /* ─── Shared transitions ─── */
+    .screen {
+      position: fixed; inset: 0;
+      display: grid; place-items: center;
+      padding: 24px;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.97);
+    }
+
+    /* ─── Calibration ─── */
     .cal-card {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 16px;
-      padding: 36px 40px;
-      max-width: 520px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 48px;
+      max-width: 480px;
       width: 100%;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      box-shadow: var(--shadow);
     }
-    .cal-card h1 { font-size: 24px; margin-bottom: 8px; }
-    .cal-card p { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px; }
-    .field { margin-bottom: 18px; }
-    .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .cal-card h1 {
+      font-family: 'DM Mono', monospace;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .cal-card .subtitle {
+      font-size: 13.5px;
+      color: var(--text-dim);
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 6px;
+    }
     .field input {
       width: 100%;
-      padding: 10px 12px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: #fafafa;
+      padding: 11px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .field input:focus { outline: 2px solid #2a6ef5; border-color: #2a6ef5; }
-    .field .hint { font-size: 12px; color: #999; margin-top: 4px; }
-    .cal-btn {
-      display: inline-block;
-      padding: 12px 28px;
-      font-size: 16px;
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(45,91,255,0.1);
+    }
+    .field .hint {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      margin-top: 5px;
+    }
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 13px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
       font-weight: 600;
-      background: #2a6ef5;
+      background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      margin-top: 8px;
+      margin-top: 10px;
+      transition: background 0.2s, transform 0.1s;
     }
-    .cal-btn:hover { background: #1b5ad4; }
-    .cal-error { color: #d00; font-size: 13px; margin-top: 8px; min-height: 20px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: scale(0.985); }
+    .cal-error { color: var(--wrong); font-size: 12.5px; margin-top: 10px; min-height: 18px; }
 
-    /* --- Chart screen --- */
-    .chart-screen { display: none; min-height: 100vh; }
-    .chart-screen.active {
-      display: grid;
-      grid-template-columns: 1fr 280px;
-    }
-    .chart-sidebar {
-      padding: 20px;
-      border-left: 1px solid #ddd;
-      background: #fafafa;
-      display: flex;
+    /* ─── Test screen ─── */
+    #testScreen {
       flex-direction: column;
-      gap: 14px;
-      overflow-y: auto;
-    }
-    .chart-sidebar .info { font-size: 13px; color: #666; line-height: 1.6; }
-    .chart-sidebar .info b { color: #222; }
-    .sidebar-buttons { display: flex; flex-direction: column; gap: 8px; }
-    .header-btn {
-      padding: 10px 16px;
-      font-size: 13px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: #fff;
-      cursor: pointer;
-      color: #333;
-      text-align: center;
-    }
-    .header-btn:hover { background: #eee; }
-
-    .chart-body {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2cm 16px;
-      background: #fff;
-      min-height: 100vh;
-    }
-    .chart-row {
-      display: flex;
-      align-items: center;
       gap: 0;
+      background: #fff;
     }
-    .chart-row .visus-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #888;
-      width: 48px;
-      text-align: right;
-      padding-right: 12px;
-      flex-shrink: 0;
+
+    .optotype-area {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      position: relative;
     }
-    .chart-row .optotypes {
+
+    .optotype-container {
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .optotype-container.flash-correct {
+      filter: drop-shadow(0 0 24px rgba(34,168,103,0.45));
+    }
+    .optotype-container.flash-wrong {
+      filter: drop-shadow(0 0 24px rgba(224,60,60,0.45));
+    }
+    .optotype-container.entering {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+
+    /* ─── Controls bar ─── */
+    .controls-bar {
+      width: 100%;
+      padding: 20px 24px 28px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 12px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
     }
-    .optotype-cell {
+    .arrow-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
       display: grid;
       place-items: center;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .arrow-btn:hover {
+      border-color: var(--accent);
+      background: #F0F4FF;
+    }
+    .arrow-btn:active { transform: scale(0.93); }
+    .arrow-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--text);
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .verify-line-wrap {
-      position: absolute;
-      top: 8px;
+    .cant-see-btn {
+      margin-left: 20px;
+      padding: 10px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .cant-see-btn:hover {
+      background: #FEF0F0;
+      border-color: var(--wrong);
+      color: var(--wrong);
+    }
+
+    /* keyboard hint */
+    .key-hint {
+      position: fixed;
+      bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      text-align: center;
-      z-index: 5;
-    }
-    .verify-line-bar {
-      height: 2px;
-      background: #000;
-      margin: 0 auto;
-    }
-    .verify-line-label {
       font-size: 11px;
-      color: #aaa;
-      margin-top: 3px;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+      opacity: 0.6;
+      pointer-events: none;
     }
 
-    .hidden { display: none !important; }
+    /* ─── Result screen ─── */
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 52px 48px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .result-card .result-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .result-card .result-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 64px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .result-card .result-desc {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .result-card .result-detail {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      text-align: left;
+      line-height: 1.8;
+    }
+    .btn-secondary {
+      display: inline-block;
+      padding: 12px 32px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-secondary:hover {
+      background: var(--bg);
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body>
 
-  <!-- Calibration -->
-  <div class="calibration-screen" id="calScreen">
+  <!-- ═══ Calibration ═══ -->
+  <div class="screen" id="calScreen">
     <div class="cal-card">
-      <h1>Näöntarkkuustaulu</h1>
-      <p>Syötä mittakalibroinnista saatu px/mm-arvo sekä tutkimusetäisyys. Ohjelma laskee Landolt C -optotyyppien oikean koon visusarvoille 1.0, 0.8, 0.63, 0.5 ja 0.4.</p>
-
+      <h1>◔ Näöntarkkuustesti</h1>
+      <p class="subtitle">Syötä kalibrointiarvo ja tutkimusetäisyys. Testi näyttää Landolt C -optotyyppejä yksi kerrallaan — vastaa nuolinäppäimillä aukon suunnan mukaan.</p>
       <div class="field">
-        <label for="pxPerMmInput">px/mm (kalibrointiarvo)</label>
+        <label for="pxPerMmInput">px / mm</label>
         <input id="pxPerMmInput" type="number" step="any" min="0.1" placeholder="esim. 3.7795" />
-        <div class="hint">Kalibrointiohjelman antama arvo, esim. 3.7795</div>
+        <div class="hint">Mittakalibroinnin antama arvo</div>
       </div>
-
       <div class="field">
-        <label for="distanceInput">Tutkimusetäisyys (metriä)</label>
+        <label for="distanceInput">Tutkimusetäisyys (m)</label>
         <input id="distanceInput" type="number" step="any" min="0.1" placeholder="esim. 4" />
-        <div class="hint">Tyypillisesti 4 m tai 6 m</div>
+        <div class="hint">Tyypillisesti 4 tai 6 metriä</div>
       </div>
-
-      <button class="cal-btn" id="startBtn">Näytä taulu</button>
+      <button class="btn-primary" id="startBtn">Aloita testi</button>
       <div class="cal-error" id="calError"></div>
     </div>
   </div>
 
-  <!-- Chart -->
-  <div class="chart-screen" id="chartScreen">
-    <div class="chart-body" id="chartBody">
-      <div class="verify-line-wrap" id="verifyLineWrap" style="display:none;">
-        <div class="verify-line-bar" id="verifyLineBar"></div>
-        <div class="verify-line-label">← 200 mm tarkastusviiva →</div>
-      </div>
+  <!-- ═══ Test ═══ -->
+  <div class="screen hidden" id="testScreen">
+    <div class="optotype-area">
+      <div class="optotype-container" id="optotypeContainer"></div>
     </div>
-    <div class="chart-sidebar">
-      <div class="info" id="infoText"></div>
-      <div class="sidebar-buttons">
-        <button class="header-btn" id="shuffleBtn">Sekoita (uudet suunnat)</button>
-        <button class="header-btn" id="recalBtn">Kalibroi uudelleen</button>
-      </div>
+    <div class="controls-bar">
+      <button class="arrow-btn" data-dir="left" title="Vasen (←)">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="arrow-btn" data-dir="up" title="Ylös (↑)">
+        <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+      </button>
+      <button class="arrow-btn" data-dir="down" title="Alas (↓)">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <button class="arrow-btn" data-dir="right" title="Oikea (→)">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="cant-see-btn" id="cantSeeBtn" title="Välilyönti">En näe</button>
+    </div>
+    <div class="key-hint">Käytä nuolinäppäimiä tai välilyöntiä</div>
+  </div>
+
+  <!-- ═══ Result ═══ -->
+  <div class="screen hidden" id="resultScreen">
+    <div class="result-card">
+      <div class="result-label">Näöntarkkuus</div>
+      <div class="result-value" id="resultValue">—</div>
+      <div class="result-desc" id="resultDesc"></div>
+      <div class="result-detail" id="resultDetail"></div>
+      <button class="btn-secondary" id="retryBtn">Testaa uudelleen</button>
     </div>
   </div>
 
   <script>
-    // --- Configuration ---
-    const VISUS_VALUES = [0.4, 0.5, 0.63, 0.8, 1.0]; // top to bottom (largest first)
-    const OPTOTYPES_PER_ROW = 5;
-    const DIRECTIONS = ['right', 'up', 'left', 'down']; // rotation angles
+    // ─── Constants ───
+    const VISUS_LEVELS = [0.4, 0.5, 0.63, 0.8, 1.0];
+    const REQUIRED_CORRECT = 3;
+    const MAX_ERRORS = 2;
+    const DIRECTIONS = ['right', 'up', 'left', 'down'];
     const ROTATIONS = { right: 0, down: 90, left: 180, up: 270 };
-
-    // Landolt C optotype diameter in mm for given visus and distance
-    // Standard: visus 1.0 → gap = 1 arcmin, diameter = 5 arcmin
-    // diameter_mm = 5 * tan(1') * distance_mm / visus
-    // tan(1 arcmin) = tan(π/10800) ≈ 0.00029089
     const TAN_1_ARCMIN = Math.tan(Math.PI / 10800);
 
     function optotypeDiameterMm(visus, distanceMm) {
       return 5 * TAN_1_ARCMIN * distanceMm / visus;
     }
 
-    // Generate inline SVG for a Landolt C with unique mask id
+    // ─── State ───
+    let pxPerMm = 0;
+    let distanceM = 0;
+    let currentLevelIdx = 0;
+    let correctCount = 0;
+    let errorCount = 0;
+    let currentDirection = '';
+    let uidCounter = 0;
+    let inputLocked = false;
+    let levelLog = []; // per-level results
+
+    // ─── DOM ───
+    const calScreen = document.getElementById('calScreen');
+    const testScreen = document.getElementById('testScreen');
+    const resultScreen = document.getElementById('resultScreen');
+    const pxPerMmInput = document.getElementById('pxPerMmInput');
+    const distanceInput = document.getElementById('distanceInput');
+    const startBtn = document.getElementById('startBtn');
+    const calError = document.getElementById('calError');
+    const optotypeContainer = document.getElementById('optotypeContainer');
+    const cantSeeBtn = document.getElementById('cantSeeBtn');
+    const resultValue = document.getElementById('resultValue');
+    const resultDesc = document.getElementById('resultDesc');
+    const resultDetail = document.getElementById('resultDetail');
+    const retryBtn = document.getElementById('retryBtn');
+
+    // ─── Screen switching ───
+    function showScreen(screen) {
+      [calScreen, testScreen, resultScreen].forEach(s => s.classList.add('hidden'));
+      screen.classList.remove('hidden');
+    }
+
+    // ─── Landolt C SVG ───
     function createLandoltSVG(direction, sizePx, uid) {
       const rot = ROTATIONS[direction];
       const maskId = `m${uid}`;
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       svg.setAttribute('width', sizePx);
       svg.setAttribute('height', sizePx);
       svg.setAttribute('viewBox', '0 0 50 50');
@@ -222,7 +395,7 @@
           </mask>
         </defs>
         <g transform="rotate(${rot} 25 25)">
-          <circle cx="25" cy="25" r="25" fill="black" mask="url(#${maskId})"/>
+          <circle cx="25" cy="25" r="25" fill="#1A1A1A" mask="url(#${maskId})"/>
         </g>`;
       return svg;
     }
@@ -231,104 +404,178 @@
       return DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
     }
 
-    // --- State ---
-    let pxPerMm = 0;
-    let distanceM = 0;
-    let uidCounter = 0;
-
-    // --- DOM ---
-    const calScreen = document.getElementById('calScreen');
-    const chartScreen = document.getElementById('chartScreen');
-    const pxPerMmInput = document.getElementById('pxPerMmInput');
-    const distanceInput = document.getElementById('distanceInput');
-    const startBtn = document.getElementById('startBtn');
-    const calError = document.getElementById('calError');
-    const chartBody = document.getElementById('chartBody');
-    const infoText = document.getElementById('infoText');
-    const shuffleBtn = document.getElementById('shuffleBtn');
-    const recalBtn = document.getElementById('recalBtn');
-
-    function showError(msg) { calError.textContent = msg; }
-
-    function buildChart() {
-      // Save verify line elements before clearing
-      const verifyWrap = document.getElementById('verifyLineWrap');
-      const verifyBar = document.getElementById('verifyLineBar');
-
-      // Clear only chart rows (keep verify line)
-      const rows = chartBody.querySelectorAll('.chart-row');
-      rows.forEach(r => r.remove());
-
-      uidCounter = 0;
+    // ─── Show one optotype ───
+    function showOptotype() {
+      const visus = VISUS_LEVELS[currentLevelIdx];
       const distanceMm = distanceM * 1000;
+      const diamMm = optotypeDiameterMm(visus, distanceMm);
+      const diamPx = diamMm * pxPerMm;
 
-      // Set verify line: 200mm wide
-      const lineWidthPx = 200 * pxPerMm;
-      verifyBar.style.width = lineWidthPx + 'px';
-      verifyWrap.style.display = '';
+      currentDirection = randomDirection();
+      const svg = createLandoltSVG(currentDirection, diamPx, uidCounter++);
 
-      // Build rows from largest (lowest visus) to smallest (highest visus)
-      for (const visus of VISUS_VALUES) {
-        const diamMm = optotypeDiameterMm(visus, distanceMm);
-        const diamPx = diamMm * pxPerMm;
-        // Spacing between optotypes: ~0.5× diameter, min 4px
-        const gap = Math.max(4, diamPx * 0.5);
+      optotypeContainer.innerHTML = '';
+      optotypeContainer.classList.add('entering');
+      optotypeContainer.appendChild(svg);
 
-        const row = document.createElement('div');
-        row.className = 'chart-row';
+      // trigger reflow then remove entering class
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          optotypeContainer.classList.remove('entering');
+        });
+      });
+    }
 
-        const label = document.createElement('div');
-        label.className = 'visus-label';
-        label.textContent = visus.toFixed(2).replace(/0$/, '');
-        row.appendChild(label);
+    // ─── Process answer ───
+    function processAnswer(answer) {
+      if (inputLocked) return;
+      inputLocked = true;
 
-        const optotypes = document.createElement('div');
-        optotypes.className = 'optotypes';
-        optotypes.style.gap = gap + 'px';
+      const isCorrect = answer === currentDirection;
+      const flashClass = isCorrect ? 'flash-correct' : 'flash-wrong';
 
-        for (let i = 0; i < OPTOTYPES_PER_ROW; i++) {
-          const cell = document.createElement('div');
-          cell.className = 'optotype-cell';
-          cell.style.width = diamPx + 'px';
-          cell.style.height = diamPx + 'px';
-          const svg = createLandoltSVG(randomDirection(), diamPx, uidCounter++);
-          cell.appendChild(svg);
-          optotypes.appendChild(cell);
-        }
+      optotypeContainer.classList.add(flashClass);
 
-        row.appendChild(optotypes);
-        chartBody.appendChild(row);
+      if (isCorrect) {
+        correctCount++;
+      } else {
+        errorCount++;
       }
 
-      // Info text
-      const exampleDiam = optotypeDiameterMm(1.0, distanceMm);
-      infoText.innerHTML = `<b>px/mm:</b> ${pxPerMm.toFixed(4)}<br><b>Etäisyys:</b> ${distanceM} m<br><b>Visus 1.0 Ø:</b> ${exampleDiam.toFixed(2)} mm (${(exampleDiam * pxPerMm).toFixed(1)} px)`;
+      setTimeout(() => {
+        optotypeContainer.classList.remove(flashClass);
+
+        // Check if level is passed
+        if (correctCount >= REQUIRED_CORRECT) {
+          // Level passed
+          levelLog.push({
+            visus: VISUS_LEVELS[currentLevelIdx],
+            passed: true,
+            correct: correctCount,
+            errors: errorCount
+          });
+
+          if (currentLevelIdx >= VISUS_LEVELS.length - 1) {
+            // All levels passed
+            finishTest(VISUS_LEVELS[currentLevelIdx]);
+            return;
+          }
+
+          // Advance
+          currentLevelIdx++;
+          correctCount = 0;
+          errorCount = 0;
+          showOptotype();
+          inputLocked = false;
+          return;
+        }
+
+        // Check if too many errors
+        if (errorCount >= MAX_ERRORS) {
+          levelLog.push({
+            visus: VISUS_LEVELS[currentLevelIdx],
+            passed: false,
+            correct: correctCount,
+            errors: errorCount
+          });
+
+          if (currentLevelIdx === 0) {
+            finishTest(null); // below 0.4
+          } else {
+            finishTest(VISUS_LEVELS[currentLevelIdx - 1]);
+          }
+          return;
+        }
+
+        // Continue same level
+        showOptotype();
+        inputLocked = false;
+      }, 350);
     }
 
-    function startChart() {
+    // ─── Finish ───
+    function finishTest(visus) {
+      const label = visus === null ? 'Alle 0.4' : visus.toFixed(2).replace(/0$/, '');
+      resultValue.textContent = label;
+
+      if (visus === null) {
+        resultDesc.textContent = 'Näöntarkkuus jäi alle alimman testatun tason.';
+      } else if (visus >= 1.0) {
+        resultDesc.textContent = 'Erinomainen näöntarkkuus — kaikki tasot läpäisty.';
+      } else {
+        resultDesc.textContent = `Näöntarkkuus vastaa visusarvoa ${label}.`;
+      }
+
+      // Build detail log
+      let log = '';
+      for (const entry of levelLog) {
+        const status = entry.passed ? '✓' : '✗';
+        log += `${status}  Visus ${entry.visus.toFixed(2).replace(/0$/, '')}`;
+        log += `  —  ${entry.correct} oikein, ${entry.errors} virhettä\n`;
+      }
+      log += `\npx/mm: ${pxPerMm.toFixed(4)}  ·  etäisyys: ${distanceM} m`;
+      resultDetail.textContent = log;
+
+      showScreen(resultScreen);
+    }
+
+    // ─── Start test ───
+    function startTest() {
       const px = parseFloat(pxPerMmInput.value);
       const dist = parseFloat(distanceInput.value);
-      if (!px || px <= 0) { showError('Syötä kelvollinen px/mm-arvo.'); return; }
-      if (!dist || dist <= 0) { showError('Syötä kelvollinen tutkimusetäisyys.'); return; }
+      if (!px || px <= 0) { calError.textContent = 'Syötä kelvollinen px/mm-arvo.'; return; }
+      if (!dist || dist <= 0) { calError.textContent = 'Syötä kelvollinen etäisyys.'; return; }
+      calError.textContent = '';
       pxPerMm = px;
       distanceM = dist;
-      showError('');
-      calScreen.style.display = 'none';
-      chartScreen.classList.add('active');
-      buildChart();
+
+      // Reset
+      currentLevelIdx = 0;
+      correctCount = 0;
+      errorCount = 0;
+      uidCounter = 0;
+      inputLocked = false;
+      levelLog = [];
+
+      showScreen(testScreen);
+      showOptotype();
     }
 
-    function recalibrate() {
-      chartScreen.classList.remove('active');
-      calScreen.style.display = '';
-    }
+    // ─── Event listeners ───
+    startBtn.addEventListener('click', startTest);
+    pxPerMmInput.addEventListener('keydown', e => { if (e.key === 'Enter') startTest(); });
+    distanceInput.addEventListener('keydown', e => { if (e.key === 'Enter') startTest(); });
 
-    startBtn.addEventListener('click', startChart);
-    // Enter in inputs
-    pxPerMmInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startChart(); });
-    distanceInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startChart(); });
-    shuffleBtn.addEventListener('click', buildChart);
-    recalBtn.addEventListener('click', recalibrate);
+    // Arrow buttons
+    document.querySelectorAll('.arrow-btn').forEach(btn => {
+      btn.addEventListener('click', () => processAnswer(btn.dataset.dir));
+    });
+
+    // Can't see button
+    cantSeeBtn.addEventListener('click', () => processAnswer('__cant_see__'));
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (testScreen.classList.contains('hidden')) return;
+
+      const map = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'up',
+        ArrowDown: 'down'
+      };
+
+      if (map[e.key]) {
+        e.preventDefault();
+        processAnswer(map[e.key]);
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        processAnswer('__cant_see__');
+      }
+    });
+
+    // Retry
+    retryBtn.addEventListener('click', () => showScreen(calScreen));
   </script>
 </body>
 </html>
