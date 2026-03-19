@@ -340,6 +340,7 @@
   <!-- ═══ Test ═══ -->
   <div class="screen hidden" id="testScreen">
     <div class="optotype-area">
+      <div id="calLine" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);height:1.5px;background:#1A1A1A;"></div>
       <div class="optotype-container" id="optotypeContainer"></div>
     </div>
     <div class="controls-bar">
@@ -595,6 +596,9 @@
       inputLocked = false;
       levelLog = [];
       lastDirection = '';
+
+      // Set 200mm calibration line
+      document.getElementById('calLine').style.width = (200 * pxPerMm) + 'px';
 
       showScreen(testScreen);
       showOptotype();
