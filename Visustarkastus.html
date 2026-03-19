@@ -646,8 +646,11 @@
     // Retry = start new test directly (calibration already saved)
     retryBtn.addEventListener('click', () => launchTest());
 
-    // Calibrate button = go back to calibration form
-    calBtn.addEventListener('click', () => showScreen(calScreen));
+    // Calibrate button = password-protected access to calibration form
+    calBtn.addEventListener('click', () => {
+      const pw = prompt('Syötä salasana:');
+      if (pw === 'Silmä') showScreen(calScreen);
+    });
 
     // ─── Init: load saved calibration if available ───
     loadCalibration();
