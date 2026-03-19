@@ -400,8 +400,12 @@
       return svg;
     }
 
+    let lastDirection = '';
     function randomDirection() {
-      return DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+      const pool = DIRECTIONS.filter(d => d !== lastDirection);
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      lastDirection = pick;
+      return pick;
     }
 
     // ─── Show one optotype ───
@@ -536,6 +540,7 @@
       uidCounter = 0;
       inputLocked = false;
       levelLog = [];
+      lastDirection = '';
 
       showScreen(testScreen);
       showOptotype();
